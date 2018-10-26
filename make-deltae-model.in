@@ -1,0 +1,34 @@
+// This script creates a model that predicts the formation enthalpy of materials
+//   using data from the OQMD
+// 
+
+// Load in a dataset of compound properties
+data = new data.materials.CompositionDataset
+data import datasets/oqmd_all.data
+data filter exclude ContainsElementFilter He Ne Ar Kr Xe
+data duplicates RankingDuplicateResolver minmize PropertyRanker energy_pa SimpleEntryRanker
+data attributes properties directory magpie/lookup-data
+data attributes properties add set general
+data attributes generate
+
+// Set the target property to be band gap energy
+data target delta_e 
+
+// Define the structure of the composite model
+model = new models.regression.WekaRegression trees.RandomForest -K 12 -I 128 -num-slots 0
+
+// Test it using cross validation
+model crossvalidate $data 10
+model train $data
+
+// Print out performance statistics
+print model training stats
+print model validation stats
+
+// Print execution time
+timer elapsed
+
+// Save the model
+save model models/delta_e
+
+exit

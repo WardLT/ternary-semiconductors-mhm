@@ -1,0 +1,34 @@
+data = new data.materials.CompositionDataset 
+data attributes properties directory magpie/lookup-data 
+data attributes properties add set general 
+	Total number of elemental properties: 22
+data generate PhaseDiagramCompositionEntryGenerator 1 3 -crystal 12 Ba As S 
+	Generated 334 new entries with a PhaseDiagramCompositionEntryGenerator. Total Count: 334
+data attributes generate 
+	Generated 145 attributes.
+data modify AddPropertyModifier bandgap delta_e delta_e-normed 
+	Modified dataset using a AddPropertyModifier
+data target delta_e -keep 
+	Set target property to delta_e
+model = load models/delta_e.obj 
+model run $data 
+data target delta_e-normed -keep 
+	Set target property to delta_e-normed
+model = load models/delta_e-normed.obj 
+model run $data 
+oqmd = new data.materials.CompositionDataset 
+oqmd import datasets/oqmd_all.data 
+	Imported 347329 entries
+oqmd target delta_e 
+	Set target property to delta_e
+data modify StabilityCalculationModifier $oqmd delta_e stability 
+	Modified dataset using a StabilityCalculationModifier
+data modify StabilityCalculationModifier $oqmd delta_e-normed stability-normed 
+	Modified dataset using a StabilityCalculationModifier
+data target bandgap -keep 
+	Set target property to bandgap
+model = load models/bandgap.obj 
+model run $data 
+save data Ba-As-S comp 
+	Saved data to disk in comp format to Ba-As-S.csv
+exit 

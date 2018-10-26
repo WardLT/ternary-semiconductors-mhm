@@ -1,0 +1,14 @@
+#! /bin/bash
+set -e
+
+runJupyter() {
+    jupyter nbconvert --execute --inplace --ExecutePreprocessor.timeout=-1 $1
+}
+
+# Make the ML models
+for f in make-bandgap-model make-deltae-model scan-BaAsS-system; do
+    java -jar magpie/dist/Magpie.jar -Xmx8g $f.in > $f.out
+done
+
+# Make the plots
+runJupyter $file

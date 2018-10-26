@@ -1,0 +1,41 @@
+data = new data.materials.CompositionDataset 
+data import datasets/oqmd_all.data 
+	Imported 347329 entries
+data filter exclude ContainsElementFilter He Ne Ar Kr Xe 
+	Filtered using a ContainsElementFilter. New size: 347137
+data attributes properties directory magpie/lookup-data 
+data attributes properties add set general 
+	Total number of elemental properties: 22
+data attributes generate 
+	Generated 145 attributes.
+data duplicates RankingDuplicateResolver minmize PropertyRanker energy_pa SimpleEntryRanker 
+	Removed 118488 duplicates using a RankingDuplicateResolver strategy.
+data target bandgap 
+	Set target property to bandgap. 99 entries were removed.
+model = new models.regression.SplitRegression 
+clfr = new models.classification.WekaClassifier meta.RandomSubSpace -W weka.classifiers.trees.REPTree -- -N 7 
+model splitter PredictedClassIntervalSplitter $clfr 0 1.5 3 
+submodel = new models.regression.SplitRegression 
+submodel splitter MultipleElementGroupsSplitter "F Cl Br I At" "O S Se Te Po" "N P As Sb Bi" 
+leaf = new models.regression.WekaRegression meta.RandomSubSpace -W weka.classifiers.trees.REPTree -- -N 7 
+submodel submodel set generic $leaf 
+model submodel set 0 $leaf 
+model submodel set generic $submodel 
+model train $data 
+print model training stats 
+
+Variable: model - Command: training stats
+Number Tested: 228550
+Pearson's Correlation (R): 0.9661
+Spearman's Correlation (Rho): 0.4100
+Kendall's Correlation (Tau): 0.3543
+MAE: 3.4659e-02
+RMSE: 1.8105e-01
+MRE: NaN
+ROC AUC: 0.4653
+
+timer elapsed 
+	Total time elapsed: 2306.421 s
+save model models/bandgap.obj 
+	Serialized model to models/bandgap.obj.obj
+exit 

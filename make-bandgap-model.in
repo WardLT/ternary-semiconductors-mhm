@@ -1,0 +1,49 @@
+// This script creates a hierarchical model design to predict the band gap energy of crystalline compounds.
+//   Run by executing this command from the same directory containing this script:
+//       java -jar magpie/dist/Magpie.jar hierarchical-bandgap-model.in
+//   The calculation takes approximately 6.5 minutes on a computer with a 3.5GHz processor and 4GB of RAM
+
+// Load in a dataset of compound properties
+data = new data.materials.CompositionDataset
+data import datasets/oqmd_all.data
+data filter exclude ContainsElementFilter He Ne Ar Kr Xe
+data attributes properties directory magpie/lookup-data
+data attributes properties add set general
+data attributes generate
+
+// Get only the ground-state instances of each compound
+data duplicates RankingDuplicateResolver minmize PropertyRanker energy_pa SimpleEntryRanker
+
+// Set the target property to be band gap energy
+data target bandgap
+
+// Define the structure of the composite model
+model = new models.regression.SplitRegression
+clfr = new models.classification.WekaClassifier meta.RandomSubSpace -W "weka.classifiers.trees.REPTree" -- -N 7
+model splitter PredictedClassIntervalSplitter $clfr 0 1.5 3
+
+// Define the submodel
+submodel = new models.regression.SplitRegression
+submodel splitter MultipleElementGroupsSplitter "F Cl Br I At" "O S Se Te Po" "N P As Sb Bi"
+leaf = new models.regression.WekaRegression meta.RandomSubSpace -W "weka.classifiers.trees.REPTree" -- -N 7
+submodel submodel set generic $leaf
+
+// Assemble model
+model submodel set 0 $leaf
+model submodel set generic $submodel
+
+// Test it using cross validation
+model train $data
+// model crossvalidate $data 10
+
+// Print out performance statistics
+print model training stats
+// print model validation stats
+
+// Print execution time
+timer elapsed
+
+// Save the model for later use
+save model models/bandgap
+
+exit
