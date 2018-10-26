@@ -1,0 +1,46 @@
+data = new data.materials.CompositionDataset 
+data import datasets/oqmd_all.data 
+	Imported 347329 entries
+data filter exclude ContainsElementFilter He Ne Ar Kr Xe 
+	Filtered using a ContainsElementFilter. New size: 347137
+data duplicates RankingDuplicateResolver minmize PropertyRanker energy_pa SimpleEntryRanker 
+	Removed 118488 duplicates using a RankingDuplicateResolver strategy.
+data attributes properties directory magpie/lookup-data 
+data attributes properties add set general 
+	Total number of elemental properties: 22
+data attributes generate 
+	Generated 145 attributes.
+data target delta_e 
+	Set target property to delta_e
+model = new models.regression.WekaRegression trees.RandomForest -K 12 -I 128 -num-slots 0 
+model crossvalidate $data 10 
+model train $data 
+print model training stats 
+
+Variable: model - Command: training stats
+Number Tested: 228649
+Pearson's Correlation (R): 0.9934
+Spearman's Correlation (Rho): 0.9978
+Kendall's Correlation (Tau): 0.9667
+MAE: 2.7676e-02
+RMSE: 1.0536e-01
+MRE: NaN
+ROC AUC: 0.0161
+
+print model validation stats 
+
+Variable: model - Command: validation stats
+Number Tested: 228649
+Pearson's Correlation (R): 0.9339
+Spearman's Correlation (Rho): 0.9836
+Kendall's Correlation (Tau): 0.9116
+MAE: 7.0781e-02
+RMSE: 3.1528e-01
+MRE: NaN
+ROC AUC: 0.0365
+
+timer elapsed 
+	Total time elapsed: 2953.378 s
+save model models/delta_e 
+	Serialized model to models/delta_e.obj
+exit 
